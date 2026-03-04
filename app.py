@@ -389,15 +389,6 @@ with left:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── Existing Payments ────────────────────────────────────────────────────────
-    st.markdown('<div class="bw-card"><div class="bw-card-title">📋 Existing Payments</div>', unsafe_allow_html=True)
-    col_c, col_d = st.columns(2)
-    with col_c:
-        existing_rto  = st.number_input("Current RTO payments ($/wk)", 0, 500, 0, 5)
-    with col_d:
-        existing_debt = st.number_input("Other debt payments ($/wk)",  0, 500, 0, 5)
-    st.markdown('</div>', unsafe_allow_html=True)
-
     # ── Preferences ─────────────────────────────────────────────────────────────
     st.markdown('<div class="bw-card"><div class="bw-card-title">⚙️ My Preferences</div>', unsafe_allow_html=True)
     comfort = st.select_slider(
@@ -429,10 +420,7 @@ with right:
     monthly_net      = net_per_period * multiplier
 
     monthly_expenses = rent + utilities + groceries + transport + insurance + other_exp
-    existing_weekly  = existing_rto + existing_debt
-    existing_monthly = existing_weekly * (52 / 12)
-
-    disposable_monthly = monthly_net - monthly_expenses - existing_monthly
+    disposable_monthly = monthly_net - monthly_expenses
     disposable_weekly  = disposable_monthly / (52 / 12)
 
     comfort_map = {
@@ -446,7 +434,7 @@ with right:
     safe_lo = max(0, disposable_weekly * lo_ratio)
     safe_hi = max(0, disposable_weekly * hi_ratio)
 
-    expense_ratio = (monthly_expenses + existing_monthly) / monthly_net if monthly_net > 0 else 1
+    expense_ratio = monthly_expenses / monthly_net if monthly_net > 0 else 1
 
     # ── Result Hero ─────────────────────────────────────────────────────────────
     if disposable_weekly > 0:
@@ -481,7 +469,7 @@ with right:
             <div class="sp-lbl">Monthly Take-Home</div>
         </div>
         <div class="score-pill sp-yellow">
-            <div class="sp-val">${monthly_expenses + existing_monthly:,.0f}</div>
+            <div class="sp-val">${monthly_expenses:,.0f}</div>
             <div class="sp-lbl">Monthly Committed</div>
         </div>
         <div class="score-pill {'sp-green' if leftover_pct >= 25 else 'sp-yellow'}">
@@ -492,10 +480,9 @@ with right:
     """, unsafe_allow_html=True)
 
     # ── Budget Donut ─────────────────────────────────────────────────────────────
-    labels = ["Rent/Mortgage", "Utilities", "Groceries", "Transport", "Insurance", "Other", "Existing Payments", "Disposable"]
-    values = [rent, utilities, groceries, transport, insurance, other_exp,
-              existing_monthly, max(0, disposable_monthly)]
-    colors = ["#4a298e", "#6b46c1", "#7c3aed", "#8b5cf6", "#a78bfa", "#c4b5fd", "#ddd6fe", "#feef02"]
+    labels = ["Rent/Mortgage", "Utilities", "Groceries", "Transport", "Insurance", "Other", "Disposable"]
+    values = [rent, utilities, groceries, transport, insurance, other_exp, max(0, disposable_monthly)]
+    colors = ["#4a298e", "#6b46c1", "#7c3aed", "#8b5cf6", "#a78bfa", "#c4b5fd", "#feef02"]
 
     fig = go.Figure(go.Pie(
         labels=labels, values=values, hole=0.55,
@@ -582,10 +569,9 @@ budget_context = f"""CUSTOMER BUDGET SNAPSHOT
 • Gross income: ${gross_income:,.2f} per {pay_freq.split('(')[0].strip().lower()}
 • Tax rate: {tax_rate}%  →  Monthly net take-home: ${monthly_net:,.2f}
 
-MONTHLY EXPENSES  (total committed: ${monthly_expenses + existing_monthly:,.2f})
+MONTHLY EXPENSES  (total committed: ${monthly_expenses:,.2f})
 • Rent/Mortgage: ${rent:,.2f}   Utilities: ${utilities:,.2f}   Groceries: ${groceries:,.2f}
 • Transportation: ${transport:,.2f}   Insurance: ${insurance:,.2f}   Other: ${other_exp:,.2f}
-• Existing RTO/debt: ${existing_monthly:,.2f}/mo (${existing_weekly:.2f}/wk)
 
 AFFORDABILITY
 • Monthly disposable: ${disposable_monthly:,.2f}  →  Weekly disposable: ${disposable_weekly:,.2f}
