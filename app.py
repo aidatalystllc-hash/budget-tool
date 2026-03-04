@@ -3,6 +3,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import anthropic
 import os
+import re
 
 # ─── Page Config ────────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -262,11 +263,49 @@ PRODUCTS = [
     {"icon": "🎮", "name": "Gaming Console Bundle",   "weekly": 12.99, "term": 78, "category": "Electronics"},
 ]
 
+# ─── Helpers ────────────────────────────────────────────────────────────────────
+def to_html_content(text):
+    """Safely convert AI text to HTML — prevents Streamlit from treating
+    dollar amounts like $18.99 as LaTeX $...$ expressions."""
+    text = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    text = text.replace('$', '&#36;')                          # block LaTeX
+    text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)  # bold
+    text = re.sub(r'\*(.+?)\*',     r'<em>\1</em>',          text)  # italic
+    text = text.replace('\n', '<br>')
+    return text
+
+def stream_chat_response(client, messages, budget_context):
+    """Stream an AI reply to the last user message and append it to history."""
+    api_messages = []
+    for i, m in enumerate(messages):
+        if i == 0 and m["role"] == "user":
+            api_messages.append({
+                "role": "user",
+                "content": f"My current budget snapshot:\n\n{budget_context}\n\n---\n\nMy question: {m['content']}",
+            })
+        else:
+            api_messages.append(m)
+
+    with st.chat_message("assistant", avatar="🤖"):
+        def gen():
+            with client.messages.stream(
+                model="claude-opus-4-6",
+                max_tokens=450,
+                system=AI_SYSTEM,
+                messages=api_messages,
+            ) as stream:
+                for chunk in stream.text_stream:
+                    yield chunk
+        full_response = st.write_stream(gen())
+    st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
+
 # ─── Session State ───────────────────────────────────────────────────────────────
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = []
 if "ai_insight" not in st.session_state:
     st.session_state.ai_insight = None
+if "pending_response" not in st.session_state:
+    st.session_state.pending_response = False
 
 # ─── Header ─────────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -489,15 +528,25 @@ st.markdown(cards_html, unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ─── How It Works ────────────────────────────────────────────────────────────────
-st.markdown('<div class="bw-card"><div class="bw-card-title">ℹ️ How This Works</div>', unsafe_allow_html=True)
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.markdown("**1. Enter Your Numbers**\n\nTell us your income, how often you're paid, and your regular monthly costs. Everything stays private — nothing is saved.")
-with col2:
-    st.markdown("**2. We Do The Math**\n\nWe calculate your take-home pay, subtract your expenses, and apply your comfort level to find a *safe* weekly payment range.")
-with col3:
-    st.markdown("**3. Shop With Confidence**\n\nProducts marked ✅ **Fits Budget** are within your range. Ask the AI advisor below for personalised guidance.")
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown("""
+<div class="bw-card">
+  <div class="bw-card-title">ℹ️ How This Works</div>
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px;">
+    <div>
+      <p style="font-weight:700; color:#351d65; margin:0 0 6px;">1. Enter Your Numbers</p>
+      <p style="color:#343546; font-size:0.88em; line-height:1.6; margin:0;">Tell us your income, how often you're paid, and your regular monthly costs. Everything stays private — nothing is saved.</p>
+    </div>
+    <div>
+      <p style="font-weight:700; color:#351d65; margin:0 0 6px;">2. We Do The Math</p>
+      <p style="color:#343546; font-size:0.88em; line-height:1.6; margin:0;">We calculate your take-home pay, subtract your expenses, and apply your comfort level to find a safe weekly payment range.</p>
+    </div>
+    <div>
+      <p style="font-weight:700; color:#351d65; margin:0 0 6px;">3. Shop With Confidence</p>
+      <p style="color:#343546; font-size:0.88em; line-height:1.6; margin:0;">Products marked ✅ Fits Budget are within your range. Ask the AI advisor below for personalised guidance.</p>
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
 # ─── CTA ─────────────────────────────────────────────────────────────────────────
 cta_col1, cta_col2, cta_col3 = st.columns([1, 2, 1])
@@ -584,19 +633,19 @@ Be encouraging, specific with dollar amounts, and keep it conversational."""
                 for chunk in stream.text_stream:
                     full_text += chunk
                     placeholder.markdown(
-                        f'<div class="ai-insight">{full_text}▌</div>',
+                        f'<div class="ai-insight">{to_html_content(full_text)}▌</div>',
                         unsafe_allow_html=True,
                     )
 
             placeholder.markdown(
-                f'<div class="ai-insight">{full_text}</div>',
+                f'<div class="ai-insight">{to_html_content(full_text)}</div>',
                 unsafe_allow_html=True,
             )
             st.session_state.ai_insight = full_text
 
 elif st.session_state.ai_insight:
     st.markdown(
-        f'<div class="ai-insight">{st.session_state.ai_insight}</div>',
+        f'<div class="ai-insight">{to_html_content(st.session_state.ai_insight)}</div>',
         unsafe_allow_html=True,
     )
     if st.button("↺ Regenerate", key="regen"):
@@ -633,6 +682,7 @@ if not st.session_state.chat_messages:
         with sug_cols[i % 2]:
             if st.button(sug, key=f"sug_{i}"):
                 st.session_state.chat_messages.append({"role": "user", "content": sug})
+                st.session_state.pending_response = True
                 st.rerun()
 
 # Render chat history
@@ -641,9 +691,17 @@ for msg in st.session_state.chat_messages:
     with st.chat_message(msg["role"], avatar=avatar):
         st.write(msg["content"])
 
+# Fire AI response for suggestion-button clicks
+if st.session_state.pending_response:
+    st.session_state.pending_response = False
+    client = get_client()
+    if client:
+        stream_chat_response(client, st.session_state.chat_messages, budget_context)
+    else:
+        st.error("⚠️ ANTHROPIC_API_KEY not configured. Add it to your Streamlit secrets.")
+
 # Chat input
-if user_input := st.chat_input("Ask about your budget, products, or payment plans..."):
-    # Show user message immediately
+elif user_input := st.chat_input("Ask about your budget, products, or payment plans..."):
     with st.chat_message("user", avatar="🙋"):
         st.write(user_input)
     st.session_state.chat_messages.append({"role": "user", "content": user_input})
@@ -653,31 +711,7 @@ if user_input := st.chat_input("Ask about your budget, products, or payment plan
         with st.chat_message("assistant", avatar="🤖"):
             st.error("⚠️ ANTHROPIC_API_KEY not configured. Add it to your Streamlit secrets.")
     else:
-        # Build API message list — inject budget context into the first user turn
-        api_messages = []
-        for i, m in enumerate(st.session_state.chat_messages):
-            if i == 0 and m["role"] == "user":
-                api_messages.append({
-                    "role": "user",
-                    "content": f"My current budget snapshot:\n\n{budget_context}\n\n---\n\nMy question: {m['content']}",
-                })
-            else:
-                api_messages.append(m)
-
-        with st.chat_message("assistant", avatar="🤖"):
-            def response_generator():
-                with client.messages.stream(
-                    model="claude-opus-4-6",
-                    max_tokens=450,
-                    system=AI_SYSTEM,
-                    messages=api_messages,
-                ) as stream:
-                    for chunk in stream.text_stream:
-                        yield chunk
-
-            full_response = st.write_stream(response_generator())
-
-        st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
+        stream_chat_response(client, st.session_state.chat_messages, budget_context)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
