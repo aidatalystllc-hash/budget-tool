@@ -287,16 +287,22 @@ def stream_chat_response(client, messages, budget_context):
             api_messages.append(m)
 
     with st.chat_message("assistant", avatar="🤖"):
-        def gen():
-            with client.messages.stream(
-                model="claude-opus-4-6",
-                max_tokens=450,
-                system=AI_SYSTEM,
-                messages=api_messages,
-            ) as stream:
-                for chunk in stream.text_stream:
-                    yield chunk
-        full_response = st.write_stream(gen())
+        placeholder    = st.empty()
+        full_response  = ""
+        # Manually accumulate instead of st.write_stream() so we can
+        # escape '$' before Streamlit's markdown parser sees it —
+        # otherwise '$21.99 ... $16.10' is treated as a LaTeX expression.
+        with client.messages.stream(
+            model="claude-opus-4-6",
+            max_tokens=450,
+            system=AI_SYSTEM,
+            messages=api_messages,
+        ) as stream:
+            for chunk in stream.text_stream:
+                full_response += chunk
+                placeholder.markdown(full_response.replace("$", r"\$") + "▌")
+        placeholder.markdown(full_response.replace("$", r"\$"))
+
     st.session_state.chat_messages.append({"role": "assistant", "content": full_response})
 
 # ─── Session State ───────────────────────────────────────────────────────────────
@@ -314,6 +320,27 @@ st.markdown("""
   <div class="bw-header-text">
     <h1>Can I Afford This?</h1>
     <p>Enter your income &amp; expenses — we'll show you exactly what fits your budget.</p>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ─── How It Works ────────────────────────────────────────────────────────────────
+st.markdown("""
+<div class="bw-card">
+  <div class="bw-card-title">ℹ️ How This Works</div>
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px;">
+    <div>
+      <p style="font-weight:700; color:#351d65; margin:0 0 6px;">1. Enter Your Numbers</p>
+      <p style="color:#343546; font-size:0.88em; line-height:1.6; margin:0;">Tell us your income, how often you're paid, and your regular monthly costs. Everything stays private — nothing is saved.</p>
+    </div>
+    <div>
+      <p style="font-weight:700; color:#351d65; margin:0 0 6px;">2. We Do The Math</p>
+      <p style="color:#343546; font-size:0.88em; line-height:1.6; margin:0;">We calculate your take-home pay, subtract your expenses, and apply your comfort level to find a safe weekly payment range.</p>
+    </div>
+    <div>
+      <p style="font-weight:700; color:#351d65; margin:0 0 6px;">3. Shop With Confidence</p>
+      <p style="color:#343546; font-size:0.88em; line-height:1.6; margin:0;">Products marked ✅ Fits Budget are within your range. Ask the AI advisor below for personalised guidance.</p>
+    </div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -527,27 +554,6 @@ cards_html += '</div>'
 st.markdown(cards_html, unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# ─── How It Works ────────────────────────────────────────────────────────────────
-st.markdown("""
-<div class="bw-card">
-  <div class="bw-card-title">ℹ️ How This Works</div>
-  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px;">
-    <div>
-      <p style="font-weight:700; color:#351d65; margin:0 0 6px;">1. Enter Your Numbers</p>
-      <p style="color:#343546; font-size:0.88em; line-height:1.6; margin:0;">Tell us your income, how often you're paid, and your regular monthly costs. Everything stays private — nothing is saved.</p>
-    </div>
-    <div>
-      <p style="font-weight:700; color:#351d65; margin:0 0 6px;">2. We Do The Math</p>
-      <p style="color:#343546; font-size:0.88em; line-height:1.6; margin:0;">We calculate your take-home pay, subtract your expenses, and apply your comfort level to find a safe weekly payment range.</p>
-    </div>
-    <div>
-      <p style="font-weight:700; color:#351d65; margin:0 0 6px;">3. Shop With Confidence</p>
-      <p style="color:#343546; font-size:0.88em; line-height:1.6; margin:0;">Products marked ✅ Fits Budget are within your range. Ask the AI advisor below for personalised guidance.</p>
-    </div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
-
 # ─── CTA ─────────────────────────────────────────────────────────────────────────
 cta_col1, cta_col2, cta_col3 = st.columns([1, 2, 1])
 with cta_col2:
@@ -689,7 +695,9 @@ if not st.session_state.chat_messages:
 for msg in st.session_state.chat_messages:
     avatar = "🙋" if msg["role"] == "user" else "🤖"
     with st.chat_message(msg["role"], avatar=avatar):
-        st.write(msg["content"])
+        # Escape $ in assistant messages to prevent LaTeX rendering
+        content = msg["content"].replace("$", r"\$") if msg["role"] == "assistant" else msg["content"]
+        st.markdown(content)
 
 # Fire AI response for suggestion-button clicks
 if st.session_state.pending_response:
@@ -720,7 +728,6 @@ st.markdown("""
 <div class="bw-footer">
     <b style="color:white;">BESTWAY</b> · Budget Snapshot Tool · For illustrative purposes only.<br>
     Results are estimates based on self-reported data and do not constitute financial advice.<br>
-    AI insights are generated by Claude and may not reflect all individual circumstances.<br>
     <a href="https://www.bestwayrto.com" target="_blank">bestwayrto.com</a>
 </div>
 """, unsafe_allow_html=True)
