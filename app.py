@@ -8,7 +8,7 @@ import re
 # ─── Page Config ────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Find What Fits You | Bestway",
-    page_icon="💛",
+    page_icon="🧮",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
