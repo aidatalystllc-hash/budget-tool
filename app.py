@@ -7,7 +7,7 @@ import re
 
 # ─── Page Config ────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Can I Afford This? | Bestway",
+    page_title="Find What Fits You | Bestway",
     page_icon="💛",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -239,12 +239,13 @@ def get_client():
 AI_SYSTEM = """You are Alex, a warm and knowledgeable budget advisor at Bestway, a rent-to-own store. Your role is to help customers understand their finances and feel genuinely confident about their purchasing decisions.
 
 Guidelines:
-- Be encouraging and empathetic — never judgmental about budget size
+- Be encouraging and empathetic, never judgmental about budget size
 - Always reference specific dollar amounts from their budget snapshot
 - Keep responses concise (2–4 sentences) unless the customer asks for more detail
 - When recommending products, explain specifically WHY they fit this customer's situation
 - Suggest practical, achievable ways to reach stretch goals
-- Use simple, friendly language — no financial jargon
+- Use simple, friendly language. No financial jargon.
+- Do not use em dashes (the — character) in your responses. Use commas, periods, or colons instead.
 - If asked about ownership timelines, use: weeks to own = term in weekly payments shown"""
 
 # ─── Product Catalog ────────────────────────────────────────────────────────────
@@ -318,8 +319,8 @@ st.markdown("""
 <div class="bw-header">
   <div class="bw-logo-badge">BESTWAY</div>
   <div class="bw-header-text">
-    <h1>Can I Afford This?</h1>
-    <p>Enter your income &amp; expenses — we'll show you exactly what fits your budget.</p>
+    <h1>Find What Fits You</h1>
+    <p>Enter your income and expenses. We'll match you with products built for your budget.</p>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -331,7 +332,7 @@ st.markdown("""
   <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px;">
     <div>
       <p style="font-weight:700; color:#351d65; margin:0 0 6px;">1. Enter Your Numbers</p>
-      <p style="color:#343546; font-size:0.88em; line-height:1.6; margin:0;">Tell us your income, how often you're paid, and your regular monthly costs. Everything stays private — nothing is saved.</p>
+      <p style="color:#343546; font-size:0.88em; line-height:1.6; margin:0;">Tell us your income, how often you're paid, and your regular monthly costs. Everything stays private. Nothing is saved.</p>
     </div>
     <div>
       <p style="font-weight:700; color:#351d65; margin:0 0 6px;">2. We Do The Math</p>
@@ -521,7 +522,7 @@ with right:
     elif expense_ratio > 0.70:
         tip = "<b>Good news:</b> You have some breathing room. Staying at the lower end of your payment range gives you a safety cushion."
     else:
-        tip = "<b>Looking great!</b> You have strong disposable income — you can comfortably explore more options, or pay ahead to own sooner."
+        tip = "<b>Looking great!</b> You have strong disposable income. Feel free to explore more options, or pay ahead to own sooner."
 
     st.markdown(f'<div class="bw-tip">💡 {tip}</div>', unsafe_allow_html=True)
 
@@ -560,7 +561,7 @@ with cta_col2:
     st.markdown("""
     <div style="background: linear-gradient(135deg, #4a298e, #351d65); border-radius: 16px; padding: 28px; text-align: center; color: white;">
         <div style="font-size: 1.4em; font-weight: 700; margin-bottom: 8px;">Ready to take the next step?</div>
-        <div style="opacity: 0.8; margin-bottom: 18px; font-size: 0.95em;">A Bestway advisor can walk you through flexible payment options — no obligation.</div>
+        <div style="opacity: 0.8; margin-bottom: 18px; font-size: 0.95em;">A Bestway advisor can walk you through flexible payment options with no obligation.</div>
         <a href="https://www.bestwayrto.com" target="_blank"
            style="background:#feef02; color:#351d65; font-weight:700; padding:12px 32px; border-radius:25px; text-decoration:none; font-size:1em;">
             Talk to a Bestway Advisor →
@@ -596,7 +597,7 @@ PRODUCTS WITHIN BUDGET: {', '.join([p['name'] + ' $' + str(p['weekly']) + '/wk' 
 STRETCH PRODUCTS: {', '.join([p['name'] + ' $' + str(p['weekly']) + '/wk' for p in stretch_prods[:4]]) or 'None'}"""
 
 # ─── AI Insight Card ─────────────────────────────────────────────────────────────
-st.markdown('<div class="bw-card"><div class="bw-card-title">✨ AI Budget Insight — powered by Claude</div>', unsafe_allow_html=True)
+st.markdown('<div class="bw-card"><div class="bw-card-title">✨ AI Budget Insight, powered by Claude</div>', unsafe_allow_html=True)
 
 ins_left, ins_right = st.columns([3, 1])
 with ins_left:
@@ -609,7 +610,7 @@ with ins_right:
 
 if gen_btn:
     if disposable_weekly <= 0:
-        st.warning("Please adjust your inputs — expenses exceed income — before generating an insight.")
+        st.warning("Please adjust your inputs. Your expenses currently exceed your income.")
     else:
         client = get_client()
         if not client:
@@ -661,7 +662,7 @@ elif st.session_state.ai_insight:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ─── AI Chat Card ────────────────────────────────────────────────────────────────
-st.markdown('<div class="bw-card"><div class="bw-card-title">💬 Chat with Your Budget Advisor — Alex (AI)</div>', unsafe_allow_html=True)
+st.markdown('<div class="bw-card"><div class="bw-card-title">💬 Chat with Your Budget Advisor, Alex (AI)</div>', unsafe_allow_html=True)
 
 chat_top_l, chat_top_r = st.columns([4, 1])
 with chat_top_l:
