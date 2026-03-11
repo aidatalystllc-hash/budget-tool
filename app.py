@@ -7,7 +7,7 @@ import re
 
 # ─── Page Config ────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Find What Fits You | Bestway",
+    page_title="Find What Fits You | BestW",
     page_icon="🧮",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -236,7 +236,7 @@ def get_client():
         return None
     return anthropic.Anthropic(api_key=key)
 
-AI_SYSTEM = """You are Alex, a warm and knowledgeable budget advisor at Bestway, a rent-to-own store. Your role is to help customers understand their finances and feel genuinely confident about their purchasing decisions.
+AI_SYSTEM = """You are Alex, a warm and knowledgeable budget advisor at Bestw, a rent-to-own store. Your role is to help customers understand their finances and feel genuinely confident about their purchasing decisions.
 
 Guidelines:
 - Be encouraging and empathetic, never judgmental about budget size
@@ -317,7 +317,7 @@ if "pending_response" not in st.session_state:
 # ─── Header ─────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="bw-header">
-  <div class="bw-logo-badge">BESTWAY</div>
+  <div class="bw-logo-badge">BESTW</div>
   <div class="bw-header-text">
     <h1>Find What Fits You</h1>
     <p>Enter your income and expenses. We'll match you with products built for your budget.</p>
@@ -548,10 +548,10 @@ with cta_col2:
     st.markdown("""
     <div style="background: linear-gradient(135deg, #4a298e, #351d65); border-radius: 16px; padding: 28px; text-align: center; color: white;">
         <div style="font-size: 1.4em; font-weight: 700; margin-bottom: 8px;">Ready to take the next step?</div>
-        <div style="opacity: 0.8; margin-bottom: 18px; font-size: 0.95em;">A Bestway advisor can walk you through flexible payment options with no obligation.</div>
-        <a href="https://www.bestwayrto.com" target="_blank"
+        <div style="opacity: 0.8; margin-bottom: 18px; font-size: 0.95em;">A Bestw advisor can walk you through flexible payment options with no obligation.</div>
+        <a href="https://www.bestwrto.com" target="_blank"
            style="background:#feef02; color:#351d65; font-weight:700; padding:12px 32px; border-radius:25px; text-decoration:none; font-size:1em;">
-            Talk to a Bestway Advisor →
+            Talk to a Bestw Advisor →
         </a>
     </div>
     """, unsafe_allow_html=True)
@@ -713,8 +713,8 @@ st.markdown('</div>', unsafe_allow_html=True)
 # ─── Footer ──────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="bw-footer">
-    <b style="color:white;">BESTWAY</b> · Budget Snapshot Tool · For illustrative purposes only.<br>
+    <b style="color:white;">BESTW</b> · Budget Snapshot Tool · For illustrative purposes only.<br>
     Results are estimates based on self-reported data and do not constitute financial advice.<br>
-    <a href="https://www.bestwayrto.com" target="_blank">bestwayrto.com</a>
+    <a href="https://www.bestwrto.com" target="_blank">bestwrto.com</a>
 </div>
 """, unsafe_allow_html=True)
